@@ -770,6 +770,10 @@ export async function handleSync(req, res) {
 
   if (!username) return sendJson(res, 400, { error: "Enter an X handle." });
 
+  if (username.toLowerCase() !== "ice_bearcute") {
+    return sendJson(res, 403, { error: "Syncing is only allowed for @ice_bearcute." });
+  }
+
   try {
     const classificationKey = classificationCacheKey(username, months, enabledCategoryIds);
     let payload = await readCache(classificationCacheDir, classificationKey, CLASSIFICATION_TTL_MS);

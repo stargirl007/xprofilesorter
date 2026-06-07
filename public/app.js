@@ -169,7 +169,13 @@ function renderAnalyzeResult(data, shouldScroll = false) {
   renderTweets();
   hideStatus();
   results.classList.remove("hidden");
-  if (syncButton) syncButton.classList.remove("hidden");
+  if (syncButton) {
+    if (data.username.toLowerCase() === "ice_bearcute") {
+      syncButton.classList.remove("hidden");
+    } else {
+      syncButton.classList.add("hidden");
+    }
+  }
 
   if (shouldScroll) {
     requestAnimationFrame(() => {
