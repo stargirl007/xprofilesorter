@@ -547,6 +547,7 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
         },
       },
       max_completion_tokens: 3500,
+      temperature: 0.0,
     }),
   });
 
