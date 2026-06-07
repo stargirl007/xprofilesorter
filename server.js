@@ -149,6 +149,28 @@ async function writeCache(dir, key, payload) {
   }
 }
 
+const openaiClassificationsFile = path.join(cacheDir, "openai_classifications.json");
+
+async function readOpenAiClassifications() {
+  try {
+    if (existsSync(openaiClassificationsFile)) {
+      return JSON.parse(await readFile(openaiClassificationsFile, "utf8"));
+    }
+  } catch (err) {
+    console.warn("Failed to read openai_classifications.json:", err.message);
+  }
+  return {};
+}
+
+async function writeOpenAiClassifications(data) {
+  try {
+    await mkdir(cacheDir, { recursive: true });
+    await writeFile(openaiClassificationsFile, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.warn("Failed to write openai_classifications.json:", err.message);
+  }
+}
+
 function rawTweetCacheKey(username, months) {
   return `${username}-${months}m`;
 }
@@ -296,7 +318,7 @@ function categoryMatch(category, hits, source = "rules") {
 }
 
 function engagementScore(tweet) {
-  return tweet.likeCount + tweet.retweetCount * 2 + tweet.replyCount * 1.5 + Math.round(tweet.viewCount / 250);
+  return Math.round(tweet.likeCount + tweet.retweetCount * 2 + tweet.replyCount * 1.5 + tweet.viewCount / 250);
 }
 
 function buildClassifiedTweet(tweet, matched) {
@@ -350,8 +372,17 @@ function classifyWithRules(tweet, enabledCategoryIds = categoryIds(), options = 
   const exclusiveMatch = ["video", "ai_vibecode", "monad", "nft_gamefi", "crypto"].map((id) => matched.find((category) => category.id === id)).find(Boolean);
   if (exclusiveMatch) matched = [exclusiveMatch];
 
-  if (options.hardOnly && !matched.some((category) => ["monad"].includes(category.id))) {
-    return buildClassifiedTweet(tweet, []);
+  if (options.hardOnly) {
+    const isMonad = matched.some((category) => category.id === "monad");
+    const isVideo = matched.some((category) => {
+      if (category.id !== "video") return false;
+      const rule = categoryRules.find((r) => r.id === "video");
+      const hasStrong = rule && rule.strongVideoKeywords && matchedKeywords(text, rule.strongVideoKeywords).length > 0;
+      return tweet.hasVideo && hasStrong;
+    });
+    if (!isMonad && !isVideo) {
+      return buildClassifiedTweet(tweet, []);
+    }
   }
 
   return buildClassifiedTweet(tweet, matched);
@@ -614,14 +645,35 @@ async function fetchRawTweets({ username, months, limit, maxPages = MAX_SEARCH_P
 
 async function getRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAGES, refresh = false }) {
   const key = rawTweetCacheKey(username, months);
-  if (!refresh) {
-    const cached = await readCache(rawCacheDir, key, RAW_TWEET_TTL_MS);
-    if (cached) return { tweets: cached.slice(0, limit), source: "cache" };
+  let existingTweets = [];
+  try {
+    // We read the cache even on refresh, using a high TTL (Infinity) so we can merge with past data
+    const cached = await readCache(rawCacheDir, key, refresh ? Infinity : RAW_TWEET_TTL_MS);
+    if (cached) {
+      existingTweets = cached;
+      if (!refresh) {
+        return { tweets: existingTweets.slice(0, limit), source: "cache" };
+      }
+    }
+  } catch (err) {
+    console.warn(`Failed to read cache for merging raw tweets of ${username}:`, err.message);
   }
 
-  const tweets = await fetchRawTweets({ username, months, limit, maxPages });
-  await writeCache(rawCacheDir, key, tweets);
-  return { tweets, source: "api" };
+  const newTweets = await fetchRawTweets({ username, months, limit, maxPages });
+  
+  const mergedMap = new Map();
+  for (const tweet of existingTweets) {
+    mergedMap.set(tweet.id, tweet);
+  }
+  for (const tweet of newTweets) {
+    mergedMap.set(tweet.id, tweet);
+  }
+
+  const mergedTweets = Array.from(mergedMap.values())
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  await writeCache(rawCacheDir, key, mergedTweets);
+  return { tweets: mergedTweets.slice(0, limit), source: "api" };
 }
 
 async function classifyTweets({ tweets, enabledCategoryIds }) {
@@ -629,24 +681,58 @@ async function classifyTweets({ tweets, enabledCategoryIds }) {
   const ambiguous = [];
   const skipped = [];
 
+  // Load cached individual classifications
+  const cachedAi = await readOpenAiClassifications();
+  const toClassifyWithAi = [];
+
   for (const tweet of tweets) {
     const hardClassified = classifyWithRules(tweet, enabledCategoryIds, { hardOnly: true });
-    if (hardClassified.categories.length > 0) hard.push(hardClassified);
-    else if (extractMentions(tweet.text).length === 0 && matchedKeywords(tweet.text.toLowerCase(), globalExcludeKeywords).length > 0) skipped.push(tweet);
-    else ambiguous.push(tweet);
+    if (hardClassified.categories.length > 0) {
+      hard.push(hardClassified);
+    } else if (extractMentions(tweet.text).length === 0 && matchedKeywords(tweet.text.toLowerCase(), globalExcludeKeywords).length > 0) {
+      skipped.push(tweet);
+    } else {
+      if (cachedAi[tweet.id]) {
+        ambiguous.push(tweet);
+      } else {
+        toClassifyWithAi.push(tweet);
+      }
+    }
   }
 
   let aiResults = new Map();
   let aiError = "";
-  try {
-    aiResults = await classifyWithOpenAi(ambiguous, enabledCategoryIds);
-  } catch (error) {
-    aiError = error.message || "OpenAI classifier failed";
+
+  if (toClassifyWithAi.length > 0) {
+    try {
+      const newAiResults = await classifyWithOpenAi(toClassifyWithAi, enabledCategoryIds);
+      for (const [id, result] of newAiResults) {
+        cachedAi[id] = result;
+      }
+      await writeOpenAiClassifications(cachedAi);
+    } catch (error) {
+      aiError = error.message || "OpenAI classifier failed";
+    }
   }
 
-  const classifiedAmbiguous = ambiguous.map((tweet) => {
+  // Build the aiResults map from cached and new results
+  for (const tweet of ambiguous) {
+    if (cachedAi[tweet.id]) aiResults.set(tweet.id, cachedAi[tweet.id]);
+  }
+  for (const tweet of toClassifyWithAi) {
+    if (cachedAi[tweet.id]) aiResults.set(tweet.id, cachedAi[tweet.id]);
+  }
+
+  const allAmbiguous = [...ambiguous, ...toClassifyWithAi];
+
+  const classifiedAmbiguous = allAmbiguous.map((tweet) => {
     const ai = aiResults.get(tweet.id);
     if (ai?.category && ai.category !== "skip") {
+      // If the AI-assigned category is not currently enabled, fallback to rules or skip
+      if (!enabledCategoryIds.includes(ai.category)) {
+        return withoutCategory(tweet, enabledCategoryIds, ai.category);
+      }
+
       const text = tweet.text.toLowerCase();
       const allowedVideoEvidence = new Set(["creator_on_camera", "person_speaking", "explainer_or_tutorial", "self_made_production"]);
       const invalidVideo = !tweet.hasVideo ||
@@ -683,7 +769,7 @@ async function classifyTweets({ tweets, enabledCategoryIds }) {
       classifier: openAiEnabled() ? "hybrid-openai" : "rules",
       classifierVersion: CLASSIFIER_VERSION,
       hardCount: hard.length,
-      openAiCandidates: ambiguous.length,
+      openAiCandidates: allAmbiguous.length,
       openAiClassified: [...aiResults.values()].filter((item) => item.category && item.category !== "skip").length,
       skippedCount: skipped.length + classifiedAmbiguous.filter((tweet) => tweet.categories.length === 0).length,
       aiError,
