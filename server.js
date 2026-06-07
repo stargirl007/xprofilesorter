@@ -748,6 +748,117 @@ export async function handleAnalyze(req, res) {
   }
 }
 
+export async function handleSync(req, res) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return sendJson(res, 400, { error: "Supabase environment variables are missing." });
+  }
+
+  let body = req.body;
+  if (!body) {
+    let raw = "";
+    for await (const chunk of req) raw += chunk;
+    body = raw ? JSON.parse(raw) : {};
+  }
+
+  const username = extractUsername(body.profile);
+  const requestedMonths = Number(body.range || 2);
+  const months = [1, 2, 3, 4].includes(requestedMonths) ? requestedMonths : 2;
+  const enabledCategoryIds = normalizeSelectedCategoryIds(body.categories);
+
+  if (!username) return sendJson(res, 400, { error: "Enter an X handle." });
+
+  try {
+    const classificationKey = classificationCacheKey(username, months, enabledCategoryIds);
+    let payload = await readCache(classificationCacheDir, classificationKey, CLASSIFICATION_TTL_MS);
+
+    if (!payload) {
+      const quickScan = Boolean(body.quickScan);
+      const limit = quickScan ? 80 : MAX_TWEETS;
+      const maxPages = quickScan ? 4 : MAX_SEARCH_PAGES;
+      const raw = await getRawTweets({ username, months, limit, maxPages, refresh: false });
+      const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds });
+      const tweets = classified.tweets;
+      const summary = categoryRules.filter((category) => enabledCategoryIds.includes(category.id)).map((category) => ({
+        ...category,
+        count: tweets.filter((tweet) => tweet.categories.some((item) => item.id === category.id)).length,
+      }));
+
+      const avatarUrl = tweets.find((t) => t.avatarUrl)?.avatarUrl || null;
+
+      payload = {
+        username,
+        avatarUrl,
+        rangeMonths: months,
+        since: monthsAgoIso(months),
+        total: tweets.length,
+        selectedCategories: enabledCategoryIds,
+        summary,
+        tweets,
+        cache: { hit: false, raw: raw.source },
+        classifierMeta: classified.meta,
+        updatedAt: new Date().toISOString(),
+      };
+      await writeCache(classificationCacheDir, classificationKey, payload);
+    }
+
+    const tweets = payload.tweets || [];
+    if (tweets.length === 0) {
+      return sendJson(res, 200, { success: true, count: 0, message: "No tweets found to sync." });
+    }
+
+    const categoryMap = {
+      ai_vibecode: "AI",
+      monad: "MONAD",
+      crypto: "DEFI",
+      nft_gamefi: "NFT",
+      video: "VIDEO"
+    };
+
+    const supabaseTweets = tweets.map(t => {
+      const origCat = t.categories[0]?.id || null;
+      return {
+        id: t.id,
+        username: username.toLowerCase(),
+        text: t.text,
+        created_at: t.createdAt,
+        url: t.url,
+        like_count: t.likeCount,
+        retweet_count: t.retweetCount,
+        reply_count: t.replyCount,
+        view_count: t.viewCount,
+        primary_category: categoryMap[origCat] || origCat,
+        categories: t.categories,
+        engagement: t.engagement,
+        avatar_url: t.avatarUrl,
+        media_url: t.mediaUrl
+      };
+    });
+
+    const response = await fetch(`${supabaseUrl}/rest/v1/tweets`, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+      },
+      body: JSON.stringify(supabaseTweets)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Supabase returned ${response.status}: ${errorText}`);
+    }
+
+    sendJson(res, 200, { success: true, count: supabaseTweets.length });
+  } catch (error) {
+    sendJson(res, 500, { error: error.message || "Failed to sync to Supabase." });
+  }
+}
+
 async function serveStatic(req, res) {
   const url = new URL(req.url, "http://localhost");
   const requested = url.pathname === "/" ? "/index.html" : url.pathname;
@@ -773,6 +884,10 @@ async function serveStatic(req, res) {
 const server = createServer((req, res) => {
   if (req.method === "POST" && req.url === "/api/analyze") {
     handleAnalyze(req, res);
+    return;
+  }
+  if (req.method === "POST" && req.url === "/api/sync") {
+    handleSync(req, res);
     return;
   }
   serveStatic(req, res);

@@ -7,6 +7,7 @@ const titleEl = document.querySelector("#title");
 const metaEl = document.querySelector("#meta");
 const filterEl = document.querySelector("#category-filter");
 const exportButton = document.querySelector("#export-csv");
+const syncButton = document.querySelector("#sync-supabase");
 const selectedCountEl = document.querySelector("#selected-count");
 const submitBtn = document.querySelector("#submit-btn");
 const cacheKey = "x-profile-sorter:last-result:v21";
@@ -168,6 +169,7 @@ function renderAnalyzeResult(data, shouldScroll = false) {
   renderTweets();
   hideStatus();
   results.classList.remove("hidden");
+  if (syncButton) syncButton.classList.remove("hidden");
 
   if (shouldScroll) {
     requestAnimationFrame(() => {
@@ -294,6 +296,47 @@ exportButton.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
 });
+
+// ── Sync Supabase ──────────────────────────────────────────────
+if (syncButton) {
+  syncButton.addEventListener("click", async () => {
+    const cachedStr = localStorage.getItem(cacheKey);
+    if (!cachedStr) {
+      alert("No analyzed results found. Please analyze a profile first.");
+      return;
+    }
+
+    const cachedData = JSON.parse(cachedStr);
+    const body = {
+      profile: cachedData.username,
+      range: cachedData.rangeMonths,
+      categories: cachedData.selectedCategories,
+      quickScan: cachedData.tweets.length <= 80
+    };
+
+    syncButton.disabled = true;
+    syncButton.textContent = "☁ Syncing...";
+
+    try {
+      const response = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) throw new Error(resData.error || "Sync failed");
+
+      alert(`Successfully synced ${resData.count} tweets to Supabase!`);
+    } catch (error) {
+      console.error(error);
+      alert(`Error syncing to Supabase: ${error.message}`);
+    } finally {
+      syncButton.disabled = false;
+      syncButton.textContent = "☁ Sync Supabase";
+    }
+  });
+}
 
 // ── Restore last result ────────────────────────────────────────
 

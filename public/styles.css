@@ -661,7 +661,7 @@ select:focus {
   min-width: 180px;
 }
 
-#export-csv {
+#export-csv, #sync-supabase {
   height: 38px;
   padding: 0 16px;
   border: 1.5px solid var(--line-strong);
@@ -674,7 +674,7 @@ select:focus {
   white-space: nowrap;
 }
 
-#export-csv:hover {
+#export-csv:hover, #sync-supabase:hover {
   border-color: var(--ink);
   color: var(--ink);
   background: var(--surface);
@@ -1113,14 +1113,14 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
 }
 
-.term-body #export-csv {
+.term-body #export-csv, .term-body #sync-supabase {
   border-color: rgba(255,255,255,0.12);
   color: rgba(255,255,255,0.5);
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
 }
 
-.term-body #export-csv:hover {
+.term-body #export-csv:hover, .term-body #sync-supabase:hover {
   border-color: rgba(255,255,255,0.4);
   color: #ffffff;
   background: rgba(255,255,255,0.05);
@@ -1327,12 +1327,12 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(109,40,217,0.08);
 }
 
-.term-window[data-theme="light"] #export-csv {
+.term-window[data-theme="light"] #export-csv, .term-window[data-theme="light"] #sync-supabase {
   border-color: rgba(0,0,0,0.15);
   color: rgba(0,0,0,0.6);
 }
 
-.term-window[data-theme="light"] #export-csv:hover {
+.term-window[data-theme="light"] #export-csv:hover, .term-window[data-theme="light"] #sync-supabase:hover {
   border-color: rgba(0,0,0,0.35);
   color: #111111;
   background: rgba(0,0,0,0.03);
