@@ -749,6 +749,16 @@ export async function handleAnalyze(req, res) {
 }
 
 export async function handleSync(req, res) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    return sendJson(res, 500, { error: "Admin password is not configured on the server." });
+  }
+
+  const clientPassword = req.headers["x-admin-password"] || "";
+  if (clientPassword !== adminPassword) {
+    return sendJson(res, 401, { error: "Invalid admin password." });
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -865,7 +875,11 @@ export async function handleSync(req, res) {
 
 async function serveStatic(req, res) {
   const url = new URL(req.url, "http://localhost");
-  const requested = url.pathname === "/" ? "/index.html" : url.pathname;
+  const requested = url.pathname === "/"
+    ? "/index.html"
+    : url.pathname === "/admin"
+      ? "/admin.html"
+      : url.pathname;
   const filePath = path.normalize(path.join(publicDir, requested));
   if (!filePath.startsWith(publicDir)) {
     res.writeHead(403);
