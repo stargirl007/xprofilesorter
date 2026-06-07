@@ -1,0 +1,23 @@
+# Environment variables (Contains sensitive API keys)
+.env
+.env.local
+.env.*
+!.env.example
+
+# Temporary caches and log files
+.cache/
+.system_generated/
+*.log
+server.err.log
+server.out.log
+
+# Dependencies and build folders
+node_modules/
+dist/
+.vercel/
+
+# System files
+.DS_Store
+Thumbs.db
+
+.vercel

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X Profile Sorter — Content Intelligence for Creators</title>
+    <meta name="description" content="Turn any X (Twitter) profile into a structured content map. Automatically classify posts by topic: Monad, AI, video, NFT, crypto and more." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="brand-row">
+            <div class="brand-left">
+              <span class="brand-mark">XS</span>
+              <span>X Profile Sorter</span>
+            </div>
+            <a href="https://x.com/ice_bearcute" target="_blank" rel="noopener noreferrer" class="creator-badge">
+              <img src="https://pbs.twimg.com/profile_images/1933854669778157568/Hu6NGa9W_normal.jpg" alt="@ice_bearcute" class="creator-pfp" />
+              <span>built by @ice_bearcute</span>
+            </a>
+          </div>
+          <h1>Turn <em>any</em> X handle into a content map.</h1>
+          <p class="subcopy">Enter a creator handle, choose the time window, then sort posts into the lanes you care about — powered by AI.</p>
+          <div class="category-rail" aria-label="Available categories">
+            <span>🎬 video creation</span>
+            <span>🤖 AI &amp; vibecode</span>
+            <span>🟣 Monad</span>
+            <span>🎮 NFT &amp; GameFi</span>
+            <span>💎 crypto</span>
+          </div>
+          <div class="hero-metrics" aria-label="Scan settings">
+            <span>✦ Post-only</span>
+            <span>✦ 240 max</span>
+            <span>✦ AI classify</span>
+            <span>✦ CSV export</span>
+          </div>
+        </div>
+
+        <form id="analyze-form" class="control-panel">
+          <div class="panel-top">
+            <div>
+              <p class="panel-kicker">Profile scan</p>
+              <h2>Sort profile</h2>
+            </div>
+            <span class="live-chip">Local</span>
+          </div>
+          <label>
+            <span>X handle</span>
+            <div class="terminal-field">
+              <input id="profile" name="profile" placeholder="ice_bearcute" autocomplete="off" required />
+            </div>
+          </label>
+          <fieldset class="range-field">
+            <legend>Range</legend>
+            <div class="range-options">
+              <label class="range-option">
+                <input type="radio" name="range" value="1" />
+                <span>1 month</span>
+              </label>
+              <label class="range-option">
+                <input type="radio" name="range" value="2" checked />
+                <span>2 months</span>
+              </label>
+              <label class="range-option">
+                <input type="radio" name="range" value="3" />
+                <span>3 months</span>
+              </label>
+              <label class="range-option">
+                <input type="radio" name="range" value="4" />
+                <span>4 months</span>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset class="category-field">
+            <div class="field-head">
+              <div class="legend-stack"><legend>Categories</legend><span id="selected-count">5 selected</span></div>
+              <div class="field-actions">
+                <button type="button" data-category-action="all">All</button>
+                <button type="button" data-category-action="clear">None</button>
+              </div>
+            </div>
+            <div class="category-options">
+              <label class="category-option">
+                <input type="checkbox" name="categories" value="video" checked />
+                <span>🎬 video creation</span>
+              </label>
+              <label class="category-option">
+                <input type="checkbox" name="categories" value="ai_vibecode" checked />
+                <span>🤖 AI &amp; vibecode</span>
+              </label>
+              <label class="category-option">
+                <input type="checkbox" name="categories" value="monad" checked />
+                <span>🟣 Monad</span>
+              </label>
+              <label class="category-option">
+                <input type="checkbox" name="categories" value="nft_gamefi" checked />
+                <span>🎮 NFT &amp; GameFi</span>
+              </label>
+              <label class="category-option">
+                <input type="checkbox" name="categories" value="crypto" checked />
+                <span>💎 crypto</span>
+              </label>
+            </div>
+          </fieldset>
+          <label class="refresh-option">
+            <input type="checkbox" id="quick-scan" name="quickScan" />
+            <span>⚡ Quick Scan <small>(~80 posts, 3&times; faster)</small></span>
+          </label>
+          <label class="refresh-option">
+            <input type="checkbox" id="refresh" name="refresh" />
+            <span>Force Refresh (bypass cache)</span>
+          </label>
+          <button type="submit" id="submit-btn">Analyze handle →</button>
+          <p class="panel-note">No category selected uses all lanes by default.</p>
+        </form>
+      </section>
+
+      <section id="status" class="status hidden"></section>
+
+      <section id="results" class="results hidden">
+        <!-- Terminal window chrome -->
+        <div class="term-window" data-theme="dark">
+          <div class="term-titlebar">
+            <div class="term-dots">
+              <span class="term-dot term-dot--red"></span>
+              <span class="term-dot term-dot--yellow"></span>
+              <span class="term-dot term-dot--green"></span>
+            </div>
+            <span class="term-title" id="term-title">x-profile-sorter — bash</span>
+            <button id="theme-toggle" class="term-theme-toggle" type="button" aria-label="Toggle Theme">
+              <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+          </div>
+          <div class="term-body">
+            <div class="results-head">
+              <div class="results-title-row">
+                <img id="profile-avatar" class="profile-avatar" src="" alt="profile picture" style="display:none" />
+                <div>
+                  <p id="meta" class="meta-line"></p>
+                  <h2 id="title"></h2>
+                </div>
+              </div>
+              <div class="actions">
+                <select id="category-filter" aria-label="Filter category">
+                  <option value="all">All categories</option>
+                </select>
+                <button id="export-csv" type="button">↓ Export CSV</button>
+              </div>
+            </div>
+            <div id="summary" class="summary-grid"></div>
+            <div id="tweets" class="tweet-grid"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
