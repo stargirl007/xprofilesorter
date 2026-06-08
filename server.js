@@ -831,6 +831,13 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
         return withoutCategory(tweet, enabledCategoryIds, "video");
       }
 
+      // Force vibecode keywords to ai_vibecode if not video
+      const vibecodeKeywords = ["vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "squadcoding", "squad coding"];
+      const hasVibecode = matchedKeywords(text, vibecodeKeywords).length > 0;
+      if (hasVibecode && targetCatId !== "video" && enabledCategoryIds.includes("ai_vibecode")) {
+        targetCatId = "ai_vibecode";
+      }
+
       if (targetCatId === "nft_gamefi" &&
         matchedKeywords(text, cryptoProjectListKeywords).length > 0 &&
         matchedKeywords(text, ["nft", "gamefi", "onchain game", "nft collection", "nft project", "play to earn", "p2e"]).length === 0
