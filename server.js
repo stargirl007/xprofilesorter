@@ -744,7 +744,12 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] 
     }
 
     // 2. Check rule-based hard matches (Layer 2)
-    const hardClassified = classifyWithRules(tweet, enabledCategoryIds, { hardOnly: true });
+    // If the tweet has a video, skip rule-based hard matching (unless it is a gif or retweet)
+    // to ensure OpenAI Vision inspects the video preview for a visible human face.
+    const canHardMatch = !tweet.hasVideo || tweet.hasGif || tweet.isRetweet;
+    const hardClassified = canHardMatch
+      ? classifyWithRules(tweet, enabledCategoryIds, { hardOnly: true })
+      : buildClassifiedTweet(tweet, []);
     if (hardClassified.categories.length > 0) {
       hard.push(hardClassified);
     } else if (extractMentions(tweet.text).length === 0 && matchedKeywords(tweet.text.toLowerCase(), globalExcludeKeywords).length > 0) {
