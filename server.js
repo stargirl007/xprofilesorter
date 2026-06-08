@@ -519,7 +519,7 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
     categories: openAiCategoryGuide(enabledCategoryIds),
     priority: ["video", "ai_vibecode", "monad", "nft_gamefi", "crypto"].filter((id) => enabledCategoryIds.includes(id)),
     tweets: tweetPayloads,
-    mediaTweets: tweetPayloads.filter((tweet) => tweet.mediaUrl).slice(0, 12),
+    mediaTweets: tweetPayloads.filter((tweet) => tweet.hasVideo && tweet.mediaUrl).slice(0, 12),
   };
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
