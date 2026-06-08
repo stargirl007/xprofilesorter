@@ -544,9 +544,9 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
             "CRITICAL: Never classify GIFs or image-only posts as video_creation. If hasGif=true, video_creation is forbidden.",
             "CRITICAL: If isInternetClipSignal=true, video_creation is forbidden. Choose another category by topic or skip.",
             "Skip or choose another category for random short clips, reposted clips, TikTok/YouTube/Twitter clips, movie/anime/famous film/funny clips from the internet, memes, gameplay, screen recordings, browser/product screen captures, stock videos, compilations, and fan edits.",
-            "If isAiGeneratedVideoSignal=true, do NOT use video_creation. Prefer ai_vibecode unless the tweet is clearly about Monad, NFT/GameFi, or crypto.",
-            "If isScreenRecordingSignal=true, do NOT use video_creation. Classify by the screen-recorded topic instead: ai_vibecode for AI/coding/product demos, monad for Monad, crypto for crypto, nft_gamefi for NFT/gamefi, otherwise skip.",
-            "If the video appears AI-generated or made with an AI video tool from the media/text, do not use video_creation; classify by the actual topic instead, usually ai_vibecode.",
+            "If isAiGeneratedVideoSignal=true, only classify as video_creation if the video clearly contains the creator presenting, speaking, or on camera (talking-head). If it is a purely AI-generated video clip with no creator voice/face, do NOT use video_creation; prefer ai_vibecode.",
+            "If isScreenRecordingSignal=true, only classify as video_creation if it has the creator presenting, explaining, or voiceover walk-through (explainer/tutorial). If it is a raw screen recording with no creator voice/guidance, do NOT use video_creation; classify by topic instead (e.g., ai_vibecode for coding demo, monad for Monad, crypto for crypto).",
+            "If the video appears AI-generated or made with an AI video tool, do not use video_creation unless there is clear creator talking-head/voice presence; otherwise, classify by the actual topic, usually ai_vibecode.",
             "CRITICAL: Generic crypto project ranking/list posts about TGE, airdrop, launch, tiers, or upcoming projects are crypto, not nft_gamefi, unless the text explicitly says NFT/GameFi/onchain game.",
             "Do not classify general project launch/build/dev words as AI unless the tweet clearly mentions AI, LLMs, models, agents, or vibecode. 'Grok' is xAI's language model, so classify it as ai_vibecode. 'ct' or 'ct account' stands for Crypto Twitter, so do NOT classify it as Monad. Posts about Hyperliquid, $HYPE, or Jeff (Jeff Yan) belong to crypto. Do NOT classify a project as Monad just because its name starts with 'mon' or contains 'mon' (like @monetrix_xyz); it must be explicitly related to the Monad blockchain, $MON, or Monad community. Posts about KOLs, KOL round, or KOL investors belong to crypto, not nft_gamefi. Posts about ambassador programs, creator programs, or community roles/jobs for general crypto projects belong to crypto, not nft_gamefi, unless the tweet explicitly mentions NFTs, minting, or allowlists.",
             "For video, use both text and media preview if available. If the preview only looks like a movie/TV/anime scene, viral clip, montage, meme, or generic cinematic footage, do NOT choose video_creation even if it is a video.",
@@ -797,8 +797,6 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] 
       const invalidVideo = !tweet.hasVideo ||
         tweet.hasGif ||
         Number(ai.confidence || 0) < 0.72 ||
-        matchedKeywords(text, aiVideoKeywords).length > 0 ||
-        matchedKeywords(text, screenRecordingKeywords).length > 0 ||
         matchedKeywords(text, internetClipKeywords).length > 0 ||
         !allowedVideoEvidence.has(ai.videoEvidence);
       if (ai.category === "video" && invalidVideo) return withoutCategory(tweet, enabledCategoryIds, "video");
