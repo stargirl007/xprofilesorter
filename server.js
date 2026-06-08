@@ -260,7 +260,7 @@ function extractMediaThumbnail(tweet) {
   for (const m of allMedia) {
     const type = String(m?.type || m?.mediaType || "").toLowerCase();
     if (type.includes("video") || type.includes("animated_gif")) {
-      const thumb = m?.previewImage || m?.preview_image_url || m?.thumbnailUrl || null;
+      const thumb = m?.previewImage || m?.preview_image_url || m?.thumbnailUrl || m?.media_url_https || m?.media_url || null;
       if (thumb) return String(thumb);
     }
     const url = String(m?.url || m?.media_url_https || m?.media_url || m?.mediaUrl || "");
@@ -517,7 +517,7 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
   const tweetPayloads = tweets.map(openAiTweetPayload);
   const payload = {
     categories: openAiCategoryGuide(enabledCategoryIds),
-    priority: ["video", "monad", "ai_vibecode", "nft_gamefi", "crypto"].filter((id) => enabledCategoryIds.includes(id)),
+    priority: ["video", "ai_vibecode", "monad", "nft_gamefi", "crypto"].filter((id) => enabledCategoryIds.includes(id)),
     tweets: tweetPayloads,
     mediaTweets: tweetPayloads.filter((tweet) => tweet.mediaUrl).slice(0, 12),
   };
@@ -713,7 +713,7 @@ async function fetchClassifiedTweetsFromSupabase(username) {
   }
 }
 
-async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] }) {
+async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [], refresh = false }) {
   const hard = [];
   const ambiguous = [];
   const skipped = [];
@@ -726,7 +726,7 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] 
 
   for (const tweet of tweets) {
     // 1. Check Supabase DB cache first (Layer 1)
-    const sbTweet = sbTweetsMap.get(tweet.id);
+    const sbTweet = refresh ? null : sbTweetsMap.get(tweet.id);
     if (sbTweet && sbTweet.categories) {
       const filteredCategories = sbTweet.categories.filter((cat) => enabledCategoryIds.includes(cat.id));
       const sbClassified = {
@@ -756,7 +756,7 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] 
       skipped.push(tweet);
     } else {
       // 3. Check local JSON cache (Layer 3)
-      if (cachedAi[tweet.id]) {
+      if (!refresh && cachedAi[tweet.id]) {
         ambiguous.push(tweet);
       } else {
         toClassifyWithAi.push(tweet);
@@ -867,7 +867,7 @@ export async function handleAnalyze(req, res) {
 
     const raw = await getRawTweets({ username, months, limit, maxPages, refresh });
     const supabaseTweets = await fetchClassifiedTweetsFromSupabase(username);
-    const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds, supabaseTweets });
+    const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds, supabaseTweets, refresh });
     const tweets = classified.tweets;
     const summary = categoryRules.filter((category) => enabledCategoryIds.includes(category.id)).map((category) => ({
       ...category,
