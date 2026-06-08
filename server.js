@@ -854,8 +854,33 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
     return classifyWithRules(tweet, enabledCategoryIds);
   });
 
-  const classified = [...hard, ...classifiedAmbiguous]
+  const vibecodeKeywords = ["vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "squadcoding", "squad coding", "coded with ai", "built with ai", "ai coding"];
+
+  const overriddenClassified = [...hard, ...classifiedAmbiguous]
     .filter((tweet) => tweet.categories.length > 0)
+    .map((tweet) => {
+      const textLower = tweet.text.toLowerCase();
+      const hasVibecode = matchedKeywords(textLower, vibecodeKeywords).length > 0;
+      const isVideo = tweet.categories.some((cat) => cat.id === "video");
+      if (hasVibecode && !isVideo && enabledCategoryIds.includes("ai_vibecode")) {
+        const isAlreadyVibecode = tweet.categories.some((cat) => cat.id === "ai_vibecode");
+        if (!isAlreadyVibecode) {
+          const category = categoryById("ai_vibecode");
+          if (category) {
+            const hits = matchedKeywords(textLower, vibecodeKeywords);
+            const overrideMatch = categoryMatch(category, hits, "override");
+            return {
+              ...tweet,
+              categories: [overrideMatch],
+              primaryCategory: category.label,
+            };
+          }
+        }
+      }
+      return tweet;
+    });
+
+  const classified = overriddenClassified
     .sort((a, b) => a.primaryCategory.localeCompare(b.primaryCategory) || b.engagement - a.engagement);
 
   return {
