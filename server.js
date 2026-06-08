@@ -46,7 +46,7 @@ const categoryRules = [
     requiresMedia: true,
     keywords: ["video creation", "recorded", "created video", "video prod", "filming", "shot this", "made this video", "produced", "dropped video", "talking head", "on camera", "explainer video", "tutorial video", "walkthrough video"],
     // These phrases strongly imply the creator made a video.
-    strongVideoKeywords: ["made a vid", "made a video", "quick vid", "new vid", "dropped a vid", "vid on", "vid about", "vid is out", "vid out", "my vid", "our vid", "video is out", "video out", "new video", "video on", "video about", "walkthrough video", "walkthrough vid", "tutorial video", "tutorial vid", "explainer", "creator missions", "i made a quick", "posted a vid", "posted a video", "watch my", "link to my vid", "check my vid", "check out my vid"],
+    strongVideoKeywords: ["made a vid", "made a video", "quick vid", "new vid", "dropped a vid", "vid on", "vid about", "vid is out", "vid out", "my vid", "our vid", "video is out", "video out", "new video", "video on", "video about", "walkthrough video", "walkthrough vid", "tutorial video", "tutorial vid", "explainer", "creator missions", "i made a quick", "posted a vid", "posted a video", "watch my", "link to my vid", "check my vid", "check out my vid", "how i ", "how to ", "guide on ", "guide to ", "roadmap", "walkthrough", "tutorial", "quick guide", "step by step", "step-by-step", "watch this", "watch the video", "here's a video", "here's the video", "see what i", "check what i", "subscribe for", "more videos", "full video", "full vid", "quick recap", "quick breakdown", "quick explainer", "vlog", "vlogging"],
     exclude: ["retweet", "clip from", "from tiktok", "from youtube", "from twitter", "credit to", "gif", "animated gif", "screen recording", "screen record", "recording screen", "gameplay", "screencast", "screen capture", "ui demo", "ai-generated", "ai generated", "generated video", "ai video", ...internetClipKeywords],
   },
   {
@@ -437,7 +437,7 @@ function openAiCategoryGuide(enabledCategoryIds) {
       keywords: category.keywords,
       exclude: category.exclude || [],
       notes: category.id === "video"
-        ? "Only choose video when hasVideo=true, hasGif=false, and the video has a human face or person visible on camera (talking head, person speaking on camera, face-bubble Loom, vlogger on camera). Do NOT choose video for screen recordings, screenshot videos, gameplay clips, browser UI demos, or slideshows with no visible human face, even if they have voiceover narration. Instead, classify those screen recordings/screenshot videos based on their actual topic keywords/content (e.g. ai_vibecode, monad, crypto, nft_gamefi, or skip)."
+        ? "Only choose video when hasVideo=true, hasGif=false, and the video is creator-made with a presenter or voiceover narration (talking head, explainer, tutorial, walkthrough with voice). Do NOT choose video for raw screen recordings, raw gameplay, raw charts, or AI animations with no creator voiceover or narration. Instead, classify those raw screen recordings based on their actual topic keywords/content (e.g. ai_vibecode, monad, crypto, nft_gamefi, or skip)."
         : category.id === "ai_vibecode"
           ? "Only choose this for clear AI, LLM, model, AI coding, or vibecode content."
           : category.id === "nft_gamefi"
@@ -542,17 +542,19 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
             "Use the category guide and priority order. Do not invent categories.",
             "Skip personal, selfie, gym, GM, vague mood, or unrelated posts only when there is no clear project/category signal.",
             "If a tweet tags or mentions @handles, infer whether each handle is a project, protocol, NFT collection, game, AI tool, creator tool, community, or just a person. Do not assume every @mention is a project. A casual caption can still be NFT/GameFi, Monad, crypto, or AI if the tagged account is clearly about that category. If the handle is unknown and the tweet text has no category signal, skip.",
-            "CRITICAL: If a tweet contains 'vibecoded', 'vibecoding', 'vibe coded', 'vibe coding', 'vibe coder', 'coded with ai', 'built with ai', or 'squadcoding', classify it as ai_vibecode — even if it also mentions a game, app, leaderboard, or other product. Vibecoded games are NOT nft_gamefi.",
-            "CRITICAL: Classify as video_creation only when hasVideo=true and a human face/person is clearly visible in the video media preview (talking head, presenter, face-bubble Loom, vlogger). If there is NO visible human face/person in the video thumbnail, it CANNOT be classified as video_creation, even if the tweet says 'watch the video below' or has a voiceover. Instead, classify by the actual topic keywords/contents.",
-            "CRITICAL: Never classify GIFs or image-only posts as video_creation. If hasGif=true, video_creation is forbidden.",
-            "CRITICAL: If isInternetClipSignal=true, video_creation is forbidden. Choose another category by topic or skip.",
+            "CRITICAL: If a tweet contains 'vibecoded', 'vibecoding', 'vibe coded', 'vibe coding', 'vibe coder', 'coded with ai', 'built with ai', or 'squadcoding', classify it as ai_vibecode — even if it also mentions a game, app, leaderboard, or other product, unless it is a creator video classified as video (video creation) which always takes priority. Vibecoded games are NOT nft_gamefi.",
+            "CRITICAL: Classify as video (video creation) only when hasVideo=true and the video is a creator-made video production (e.g., talking head, person speaking, explainer video, walkthrough, or tutorial with creator voiceover/narration). If it is a raw screen recording, gameplay, chart capture, or AI animation with NO voiceover, narration, or presenter, it CANNOT be classified as video; classify it by its actual topic instead.",
+            "CRITICAL: If a video shows a screen recording, gameplay, chart, or slideshow, but the tweet text indicates voiceover, walkthrough, tutorial, or presentation (e.g., mentions 'walkthrough', 'vid on', 'tutorial', 'quick guide', 'explanation', 'my video', 'voiced'), classify it as video and map the videoEvidence to 'explainer_or_tutorial' or 'self_made_production'. Do NOT choose 'screen_recording' for voiced tutorials, as 'screen_recording' is reserved for raw silent screen captures.",
+            "CRITICAL: If the video preview thumbnail shows a human face or creator avatar/photo, or if the text/context clearly implies voice/narration, prioritize video.",
+            "CRITICAL: Never classify GIFs or image-only posts as video. If hasGif=true, video is forbidden.",
+            "CRITICAL: If isInternetClipSignal=true, video is forbidden. Choose another category by topic or skip.",
             "Skip or choose another category for random short clips, reposted clips, TikTok/YouTube/Twitter clips, movie/anime/famous film/funny clips from the internet, memes, gameplay, screen recordings, browser/product screen captures, stock videos, compilations, and fan edits.",
-            "If isAiGeneratedVideoSignal=true, do NOT classify as video_creation unless a human face/person is clearly visible on camera (talking-head); otherwise, prefer ai_vibecode or skip.",
-            "If isScreenRecordingSignal=true or the preview only shows a screen recording/software capture/browser UI/code/game/charts, it CANNOT be video_creation under any circumstances, even if it has a voiceover narration. Instead, analyze the content/keywords of the tweet and classify it by its actual topic category (e.g., ai_vibecode, monad, crypto, nft_gamefi, or skip).",
-            "If the video appears AI-generated or made with an AI video tool, do not use video_creation unless a human face/person is clearly visible on camera (talking head); otherwise, classify by the actual topic, usually ai_vibecode.",
+            "If isAiGeneratedVideoSignal=true, do NOT classify as video unless there is clear creator voiceover narration or a human face/presenter visible; otherwise, prefer ai_vibecode or skip.",
+            "If isScreenRecordingSignal=true or the video shows a screen recording/software capture/browser UI/code/game/charts, only classify as video if it has creator voiceover explanation or walkthrough narration. If it is a raw recording with no voiceover/narration, do NOT use video; classify by topic instead (e.g., ai_vibecode, monad, crypto, nft_gamefi, or skip).",
+            "If the video appears AI-generated or made with an AI video tool, do not use video unless a human face/person is clearly visible on camera or there is creator voiceover narration; otherwise, classify by the actual topic, usually ai_vibecode.",
             "CRITICAL: Generic crypto project ranking/list posts about TGE, airdrop, launch, tiers, or upcoming projects are crypto, not nft_gamefi, unless the text explicitly says NFT/GameFi/onchain game.",
             "Do not classify general project launch/build/dev words as AI unless the tweet clearly mentions AI, LLMs, models, agents, or vibecode. 'Grok' is xAI's language model, so classify it as ai_vibecode. 'ct' or 'ct account' stands for Crypto Twitter, so do NOT classify it as Monad. Posts about Hyperliquid, $HYPE, or Jeff (Jeff Yan) belong to crypto. Do NOT classify a project as Monad just because its name starts with 'mon' or contains 'mon' (like @monetrix_xyz); it must be explicitly related to the Monad blockchain, $MON, or Monad community. Posts about KOLs, KOL round, or KOL investors belong to crypto, not nft_gamefi. Posts about ambassador programs, creator programs, or community roles/jobs for general crypto projects belong to crypto, not nft_gamefi, unless the tweet explicitly mentions NFTs, minting, or allowlists.",
-            "For video, use both text and media preview if available. If the preview only looks like a movie/TV/anime scene, viral clip, montage, meme, chart, game screen, code, or generic screen capture, do NOT choose video_creation even if it is a video.",
+            "For video, use both text and media preview if available. If the preview only looks like a movie/TV/anime scene, viral clip, montage, meme, or raw gameplay/charts with no creator voice/narration, do NOT choose video even if it is a video.",
             "Each tweet may include a 'mentions' field listing @handles tagged in the post. Use your knowledge of what each account/project represents (e.g. @monad_xyz is a blockchain, @cursor_ai is an AI coding tool, @capcut is a video editor, NFT collection accounts are nft_gamefi) to infer the most likely category. Treat well-known project accounts as strong classification signals, but skip unknown personal accounts.",
           ].join(" "),
         },
@@ -685,6 +687,8 @@ async function getRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAG
   const mergedTweets = Array.from(mergedMap.values())
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+  await writeCache(rawCacheDir, key, mergedTweets);
+
   return { tweets: mergedTweets.slice(0, limit), source: "api" };
 }
 
@@ -747,9 +751,15 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
     }
 
     // 2. Check rule-based hard matches (Layer 2)
-    // If the tweet has a video, skip rule-based hard matching (unless it is a gif or retweet)
-    // to ensure OpenAI Vision inspects the video preview for a visible human face.
-    const canHardMatch = !tweet.hasVideo || tweet.hasGif || tweet.isRetweet;
+    // If the tweet has a video, only skip rule-based hard matching if it DOES NOT have strong video keywords.
+    // This allows videos with clear tutorial/walkthrough text keywords to auto-classify immediately.
+    // Otherwise, for vague text videos, we skip hard-matching and send to OpenAI Vision (Layer 3).
+    const textLower = tweet.text.toLowerCase();
+    const videoRule = categoryById("video");
+    const hasStrongVideo = videoRule && videoRule.strongVideoKeywords &&
+      matchedKeywords(textLower, videoRule.strongVideoKeywords).length > 0;
+    
+    const canHardMatch = !tweet.hasVideo || tweet.hasGif || tweet.isRetweet || hasStrongVideo;
     const hardClassified = canHardMatch
       ? classifyWithRules(tweet, enabledCategoryIds, { hardOnly: true })
       : buildClassifiedTweet(tweet, []);
@@ -801,14 +811,27 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
       }
 
       const text = tweet.text.toLowerCase();
-      const allowedVideoEvidence = new Set(["creator_on_camera", "person_speaking"]);
-      const invalidVideo = !tweet.hasVideo ||
-        tweet.hasGif ||
-        Number(ai.confidence || 0) < 0.72 ||
-        matchedKeywords(text, internetClipKeywords).length > 0 ||
-        !allowedVideoEvidence.has(ai.videoEvidence);
-      if (ai.category === "video" && invalidVideo) return withoutCategory(tweet, enabledCategoryIds, "video");
-      if (ai.category === "nft_gamefi" &&
+      const videoRule = categoryById("video");
+      const hasStrongVideo = videoRule && videoRule.strongVideoKeywords &&
+        matchedKeywords(text, videoRule.strongVideoKeywords).length > 0;
+      
+      const allowedVideoEvidence = new Set(["creator_on_camera", "person_speaking", "explainer_or_tutorial", "self_made_production"]);
+      const isCreatorVideo = tweet.hasVideo &&
+        !tweet.hasGif &&
+        Number(ai.confidence || 0) >= 0.72 &&
+        matchedKeywords(text, internetClipKeywords).length === 0 &&
+        (allowedVideoEvidence.has(ai.videoEvidence) || hasStrongVideo);
+
+      let targetCatId = ai.category;
+      if (isCreatorVideo && enabledCategoryIds.includes("video")) {
+        targetCatId = "video";
+      }
+
+      if (targetCatId === "video" && !isCreatorVideo) {
+        return withoutCategory(tweet, enabledCategoryIds, "video");
+      }
+
+      if (targetCatId === "nft_gamefi" &&
         matchedKeywords(text, cryptoProjectListKeywords).length > 0 &&
         matchedKeywords(text, ["nft", "gamefi", "onchain game", "nft collection", "nft project", "play to earn", "p2e"]).length === 0
       ) {
@@ -817,7 +840,7 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
           return buildClassifiedTweet(tweet, [categoryMatch(crypto, [ai.reason || "project list"], "openai")]);
         }
       }
-      const category = categoryById(ai.category);
+      const category = categoryById(targetCatId);
       if (category) return buildClassifiedTweet(tweet, [categoryMatch(category, [ai.reason || "openai"], "openai")]);
     }
     if (ai?.category === "skip") return buildClassifiedTweet(tweet, []);
