@@ -16,7 +16,7 @@ const cacheDir = path.join(__dirname, ".cache");
 const rawCacheDir = path.join(cacheDir, "tweets");
 const classificationCacheDir = path.join(cacheDir, "classifications");
 
-const globalExcludeKeywords = ["my pfp", "pfp", "my avatar", "check out", "gm", "gmgm", "gm gm", "good morning", "selfie", "selfie pic", "me irl", "my pic", "my photo", "profile pic", "just woke up", "at gym", "gym", "outfit"];
+const globalExcludeKeywords = ["my pfp", "pfp", "my avatar", "check out", "gm", "gmgm", "gm gm", "good morning", "selfie", "selfie pic", "me irl", "my pic", "my photo", "profile pic", "just woke up", "at gym", "gym", "outfit", "meme", "jk", "vibes only"];
 const aiVideoKeywords = ["ai video", "ai-generated video", "ai generated video", "generated video", "generated with ai", "suno", "runway", "pika", "kling", "luma", "hailuo", "veo", "sora"];
 const screenRecordingKeywords = ["screen recording", "screen record", "recording screen", "screencast", "screen capture", "ui demo", "browser demo", "demo screen", "walkthrough screen"];
 const internetClipKeywords = ["short clip", "movie clip", "film clip", "anime clip", "series clip", "tv show clip", "cinema clip", "scene from", "from a movie", "from movie", "from a film", "from film", "movie scene", "film scene", "anime scene", "netflix", "marvel", "disney", "compilation", "fan edit"];
@@ -53,7 +53,8 @@ const categoryRules = [
     id: "ai_vibecode",
     label: "AI & vibecode",
     color: "#db2777",
-    keywords: ["ai", "a.i.", "llm", "gpt", "chatgpt", "claude", "openai", "anthropic", "gemini", "deepseek", "grok", "llama", "mistral", "agentic", "ai agent", "ai agents", "prompt", "prompting", "prompt engineering", "ai model", "language model", "inference", "fine-tune", "training model", "neural", "transformer", "vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "coded with ai", "built with ai", "ai coding", "ai app", "ai tool", "ai workflow", "ai automation", "ai assistant", "cursor ai", "cursor editor", "lovable", "bolt.new", "replit agent", "claude code", "codex", "squadcoding", "squad coding", "no-code", "nocode", ...aiVideoKeywords, ...screenRecordingKeywords],
+    keywords: ["ai", "a.i.", "llm", "gpt", "chatgpt", "claude", "openai", "anthropic", "gemini", "deepseek", "grok", "llama", "mistral", "agentic", "ai agent", "ai agents", "prompt", "prompting", "prompt engineering", "ai model", "language model", "inference", "fine-tune", "training model", "neural", "transformer", "vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "coded with ai", "built with ai", "ai coding", "ai app", "ai tool", "ai workflow", "ai automation", "ai assistant", "cursor ai", "cursor editor", "lovable", "bolt.new", "replit agent", "claude code", "codex", "squadcoding", "squad coding", "no-code", "nocode", "shipped", "built", "deployed", "code", "developer", "react", "api", "github", "agent", ...aiVideoKeywords, ...screenRecordingKeywords],
+    strongKeywords: ["ai", "claude", "gpt", "vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "shipped", "built", "deployed", "code", "developer", "react", "api", "github", "agent", "cursor ai", "cursor editor", "lovable", "bolt.new", "replit agent", "claude code", "squadcoding", "squad coding"],
     exclude: ["trend", "ai hype"],
   },
   {
@@ -61,12 +62,14 @@ const categoryRules = [
     label: "Monad",
     color: "#5b21b6",
     keywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz"],
+    strongKeywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz"],
   },
   {
     id: "nft_gamefi",
     label: "NFT & GameFi",
     color: "#7c3aed",
-    keywords: ["nft", "gamefi", "nft collection", "nft project", "nft projects", "nft mint", "nft floor", "nft drop", "nft marketplace", "erc-721", "pfp collection", "gamefi project", "onchain game", "dapp game", "play to earn", "p2e", "yugen", "t00ns", "mint", "mint date", "wl", "whitelist", "allowlist"],
+    keywords: ["nft", "gamefi", "nft collection", "nft project", "nft projects", "nft mint", "nft floor", "nft drop", "nft marketplace", "erc-721", "pfp collection", "gamefi project", "onchain game", "dapp game", "play to earn", "p2e", "yugen", "t00ns", "mint", "mint date", "wl", "whitelist", "allowlist", "collection", "play-to-earn"],
+    strongKeywords: ["nft", "wl", "collection", "play-to-earn", "play to earn", "p2e", "nft collection", "nft project", "nft projects", "nft mint", "nft floor", "nft drop", "erc-721", "gamefi project", "onchain game", "yugen", "t00ns", "mint date", "whitelist", "allowlist"],
     exclude: ["price pump", "buy now", "trend", "vibecoded", "vibecoding", "vibe coded", "vibe coding", "coded with ai", "built with ai", "ai coding", ...cryptoProjectListKeywords],
   },
   {
@@ -97,6 +100,7 @@ const categoryRules = [
       "hyperliquid", "gmx", "dydx", "drift", "jupiter", "raydium", "orca",
       "uniswap", "curve", "aave", "compound", "maker", "synthetix",
     ],
+    strongKeywords: ["bitcoin", "ethereum", "solana", "stablecoin", "blockchain", "defi", "web3", "smart contract", "solidity", "evm", "liquidity pool", "hyperliquid", "gmx", "dydx", "uniswap", "yield farming", "perp trading", "airdrop", "token launch", "$token", "$sol", "$eth", "$btc"],
     exclude: ["speculation", "trend"],
   },
 ];
@@ -373,14 +377,20 @@ function classifyWithRules(tweet, enabledCategoryIds = categoryIds(), options = 
   if (exclusiveMatch) matched = [exclusiveMatch];
 
   if (options.hardOnly) {
-    const isMonad = matched.some((category) => category.id === "monad");
-    const isVideo = matched.some((category) => {
-      if (category.id !== "video") return false;
-      const rule = categoryRules.find((r) => r.id === "video");
-      const hasStrong = rule && rule.strongVideoKeywords && matchedKeywords(text, rule.strongVideoKeywords).length > 0;
-      return tweet.hasVideo && hasStrong;
+    const isHardMatch = matched.some((category) => {
+      const rule = categoryRules.find((r) => r.id === category.id);
+      if (!rule) return false;
+
+      if (category.id === "video") {
+        const hasStrongVideo = rule.strongVideoKeywords && matchedKeywords(text, rule.strongVideoKeywords).length > 0;
+        return tweet.hasVideo && hasStrongVideo;
+      }
+
+      const hasStrong = rule.strongKeywords && category.hits.some((hit) => rule.strongKeywords.includes(hit));
+      return hasStrong;
     });
-    if (!isMonad && !isVideo) {
+
+    if (!isHardMatch) {
       return buildClassifiedTweet(tweet, []);
     }
   }
@@ -672,11 +682,38 @@ async function getRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAG
   const mergedTweets = Array.from(mergedMap.values())
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  await writeCache(rawCacheDir, key, mergedTweets);
   return { tweets: mergedTweets.slice(0, limit), source: "api" };
 }
 
-async function classifyTweets({ tweets, enabledCategoryIds }) {
+async function fetchClassifiedTweetsFromSupabase(username) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey || !username) return [];
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/tweets?username=eq.${encodeURIComponent(username.toLowerCase())}`, {
+      method: "GET",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      console.warn(`Supabase query returned status ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.warn("Failed to fetch existing classifications from Supabase:", err.message);
+    return [];
+  }
+}
+
+async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [] }) {
   const hard = [];
   const ambiguous = [];
   const skipped = [];
@@ -685,13 +722,35 @@ async function classifyTweets({ tweets, enabledCategoryIds }) {
   const cachedAi = await readOpenAiClassifications();
   const toClassifyWithAi = [];
 
+  const sbTweetsMap = new Map(supabaseTweets.map((t) => [String(t.id), t]));
+
   for (const tweet of tweets) {
+    // 1. Check Supabase DB cache first (Layer 1)
+    const sbTweet = sbTweetsMap.get(tweet.id);
+    if (sbTweet && sbTweet.categories) {
+      const filteredCategories = sbTweet.categories.filter((cat) => enabledCategoryIds.includes(cat.id));
+      const sbClassified = {
+        ...tweet,
+        categories: filteredCategories,
+        primaryCategory: filteredCategories[0]?.label || "",
+        engagement: engagementScore(tweet),
+      };
+      if (sbClassified.categories.length > 0) {
+        hard.push(sbClassified);
+      } else {
+        skipped.push(tweet);
+      }
+      continue;
+    }
+
+    // 2. Check rule-based hard matches (Layer 2)
     const hardClassified = classifyWithRules(tweet, enabledCategoryIds, { hardOnly: true });
     if (hardClassified.categories.length > 0) {
       hard.push(hardClassified);
     } else if (extractMentions(tweet.text).length === 0 && matchedKeywords(tweet.text.toLowerCase(), globalExcludeKeywords).length > 0) {
       skipped.push(tweet);
     } else {
+      // 3. Check local JSON cache (Layer 3)
       if (cachedAi[tweet.id]) {
         ambiguous.push(tweet);
       } else {
@@ -772,7 +831,6 @@ async function classifyTweets({ tweets, enabledCategoryIds }) {
       openAiCandidates: allAmbiguous.length,
       openAiClassified: [...aiResults.values()].filter((item) => item.category && item.category !== "skip").length,
       skippedCount: skipped.length + classifiedAmbiguous.filter((tweet) => tweet.categories.length === 0).length,
-      aiError,
     },
   };
 }
@@ -805,7 +863,8 @@ export async function handleAnalyze(req, res) {
     }
 
     const raw = await getRawTweets({ username, months, limit, maxPages, refresh });
-    const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds });
+    const supabaseTweets = await fetchClassifiedTweetsFromSupabase(username);
+    const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds, supabaseTweets });
     const tweets = classified.tweets;
     const summary = categoryRules.filter((category) => enabledCategoryIds.includes(category.id)).map((category) => ({
       ...category,
@@ -880,7 +939,8 @@ export async function handleSync(req, res) {
       const limit = quickScan ? 80 : MAX_TWEETS;
       const maxPages = quickScan ? 4 : MAX_SEARCH_PAGES;
       const raw = await getRawTweets({ username, months, limit, maxPages, refresh: false });
-      const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds });
+      const supabaseTweets = await fetchClassifiedTweetsFromSupabase(username);
+      const classified = await classifyTweets({ tweets: raw.tweets, enabledCategoryIds, supabaseTweets });
       const tweets = classified.tweets;
       const summary = categoryRules.filter((category) => enabledCategoryIds.includes(category.id)).map((category) => ({
         ...category,
