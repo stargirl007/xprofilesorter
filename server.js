@@ -698,7 +698,7 @@ async function fetchClassifiedTweetsFromSupabase(username) {
   if (!supabaseUrl || !supabaseKey || !username) return [];
 
   try {
-    const response = await fetch(`${supabaseUrl}/rest/v1/tweets?username=eq.${encodeURIComponent(username.toLowerCase())}`, {
+    const response = await fetch(`${supabaseUrl}/rest/v1/tweets_raw?username=eq.${encodeURIComponent(username.toLowerCase())}`, {
       method: "GET",
       headers: {
         "apikey": supabaseKey,
@@ -1059,7 +1059,7 @@ export async function handleSync(req, res) {
       };
     });
 
-    const response = await fetch(`${supabaseUrl}/rest/v1/tweets`, {
+    const response = await fetch(`${supabaseUrl}/rest/v1/tweets_raw`, {
       method: "POST",
       headers: {
         "apikey": supabaseKey,
