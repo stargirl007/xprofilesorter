@@ -628,7 +628,7 @@ async function classifyWithOpenAi(tweets, enabledCategoryIds) {
   return results;
 }
 
-async function fetchRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAGES }) {
+async function fetchRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAGES, existingTweets = [] }) {
   const key = process.env.TWITTERAPI_KEY;
   if (!key) {
     const error = new Error("TWITTERAPI_KEY is missing. Copy .env.example to .env.local and add your key.");
@@ -639,15 +639,28 @@ async function fetchRawTweets({ username, months, limit, maxPages = MAX_SEARCH_P
   const since = monthsAgoIso(months);
   const query = `from:${username} since:${since} -filter:replies`;
   const tweetsById = new Map();
+  const existingIds = new Set(existingTweets.map(t => t.id));
   let cursor = "";
 
   for (let page = 0; page < maxPages && tweetsById.size < limit; page++) {
     const data = await fetchSearchPage({ key, query, cursor });
     const pageTweets = Array.isArray(data.tweets) ? data.tweets : [];
+    
+    let hasOverlap = false;
     for (const tweet of pageTweets) {
       const normalized = normalizeTweet(tweet);
-      if (normalized.id && normalized.text) tweetsById.set(normalized.id, normalized);
+      if (normalized.id && normalized.text) {
+        tweetsById.set(normalized.id, normalized);
+        if (existingIds.has(normalized.id)) {
+          hasOverlap = true;
+        }
+      }
       if (tweetsById.size >= limit) break;
+    }
+
+    if (hasOverlap && existingTweets.length > 0) {
+      console.log(`[fetchRawTweets] Found overlapping cached tweets on page ${page + 1}. Stopping pagination early.`);
+      break;
     }
 
     const nextCursor = getNextCursor(data);
@@ -674,7 +687,7 @@ async function getRawTweets({ username, months, limit, maxPages = MAX_SEARCH_PAG
     console.warn(`Failed to read cache for merging raw tweets of ${username}:`, err.message);
   }
 
-  const newTweets = await fetchRawTweets({ username, months, limit, maxPages });
+  const newTweets = await fetchRawTweets({ username, months, limit, maxPages, existingTweets });
   
   const mergedMap = new Map();
   for (const tweet of existingTweets) {
