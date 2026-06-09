@@ -545,6 +545,8 @@ async function classifyWithOpenAiBatch(tweets, enabledCategoryIds) {
             "CRITICAL: If a tweet contains 'vibecoded', 'vibecoding', 'vibe coded', 'vibe coding', 'vibe coder', 'coded with ai', 'built with ai', or 'squadcoding', classify it as ai_vibecode — even if it also mentions a game, app, leaderboard, or other product, unless it is a creator video classified as video (video creation) which always takes priority. Vibecoded games are NOT nft_gamefi.",
             "CRITICAL: Classify as video (video creation) only when hasVideo=true and the video is a creator-made video production (e.g., talking head, person speaking, explainer video, walkthrough, or tutorial with creator voiceover/narration). If it is a raw screen recording, gameplay, chart capture, or AI animation with NO voiceover, narration, or presenter, it CANNOT be classified as video; classify it by its actual topic instead.",
             "CRITICAL: If a video shows a screen recording, gameplay, chart, or slideshow, but the tweet text indicates voiceover, walkthrough, tutorial, or presentation (e.g., mentions 'walkthrough', 'vid on', 'tutorial', 'quick guide', 'explanation', 'my video', 'voiced', 'i made a vid', 'i made vid', 'i make vids', 'i made vids', 'i made a video', 'i made video', 'i film', 'i filmed', 'i recorded', 'i record', 'i show you', 'i show how'), classify it as video and map the videoEvidence to 'explainer_or_tutorial' or 'self_made_production'. Do NOT choose 'screen_recording' for voiced tutorials, as 'screen_recording' is reserved for raw silent screen captures.",
+            "CRITICAL: 'creator_on_camera' and 'person_speaking' are strictly reserved for REAL HUMAN BEINGS appearing on camera or speaking. Cartoons, anime, puppets (like @just_t00ns), drawings, memes, or digital/AI avatars are NOT human and must NEVER be mapped to 'creator_on_camera' or 'person_speaking'. Map them to 'not_video', 'internet_clip', or 'ai_generated_video' instead.",
+            "CRITICAL: Do NOT classify a video as 'self_made_production' or 'explainer_or_tutorial' unless the tweet text explicitly indicates that the creator is explaining, presenting, or walkthrough-guiding something (e.g. contains words like 'tutorial', 'walkthrough', 'i made a video', 'i filmed', 'i recorded', 'i show you', 'how to'). If it is just a raw chart, screenshot, gameplay, animation clip, or meme with a casual caption, map it to 'not_video', 'internet_clip', or 'screen_recording'.",
             "CRITICAL: If the video preview thumbnail shows a real human face, or if the text/context clearly implies creator voice/narration, prioritize video. Do NOT classify a video as video creation if the preview thumbnail only shows cartoons, anime, puppets, or memes without any text indicator of creator voiceover or walkthrough.",
             "CRITICAL: Cartoon, anime, puppet, 2D/3D animation, or puppet space clips (like @just_t00ns or similar characters laying down/dancing) are NOT creator video productions. Map their videoEvidence to 'not_video' or 'gif_or_image'. Do NOT classify them as video; classify them by their actual topic (e.g., nft_gamefi for @just_t00ns/t00ns NFT space, or skip if no topic).",
             "CRITICAL: Never classify GIFs or image-only posts as video. If hasGif=true, video is forbidden.",
@@ -829,12 +831,21 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
       const hasStrongVideo = videoRule && videoRule.strongVideoKeywords &&
         matchedKeywords(text, videoRule.strongVideoKeywords).length > 0;
       
+      const hasWeakVideo = videoRule && videoRule.keywords &&
+        matchedKeywords(text, videoRule.keywords).length > 0;
+      const hasAnyVideoKeyword = hasStrongVideo || hasWeakVideo;
+      
       const allowedVideoEvidence = new Set(["creator_on_camera", "person_speaking", "explainer_or_tutorial", "self_made_production"]);
+      const allowedWithoutKeywords = new Set(["creator_on_camera", "person_speaking"]);
       const isCreatorVideo = tweet.hasVideo &&
         !tweet.hasGif &&
         Number(ai.confidence || 0) >= 0.72 &&
         matchedKeywords(text, internetClipKeywords).length === 0 &&
-        (allowedVideoEvidence.has(ai.videoEvidence) || (hasStrongVideo && !["ai_generated_video", "gif_or_image", "not_video"].includes(ai.videoEvidence)));
+        (
+          (hasAnyVideoKeyword && allowedVideoEvidence.has(ai.videoEvidence)) ||
+          (!hasAnyVideoKeyword && allowedWithoutKeywords.has(ai.videoEvidence)) ||
+          (hasStrongVideo && !["ai_generated_video", "gif_or_image", "not_video"].includes(ai.videoEvidence))
+        );
 
       let targetCatId = ai.category;
       if (isCreatorVideo && enabledCategoryIds.includes("video")) {
