@@ -208,7 +208,7 @@ form.addEventListener("submit", async (event) => {
   const formData = new FormData(form);
   const body = Object.fromEntries(formData.entries());
   body.categories = formData.getAll("categories");
-  body.refresh = Boolean(form.querySelector("#refresh")?.checked);
+  body.refresh = false;
   body.quickScan = Boolean(form.querySelector("#quick-scan")?.checked);
 
   results.classList.add("hidden");
@@ -228,8 +228,6 @@ form.addEventListener("submit", async (event) => {
     localStorage.setItem(cacheKey, JSON.stringify(data));
     renderAnalyzeResult(data, true);
 
-    const refreshCheckbox = form.querySelector("#refresh");
-    if (refreshCheckbox) refreshCheckbox.checked = false;
     const quickCheckbox = form.querySelector("#quick-scan");
     if (quickCheckbox) quickCheckbox.checked = false;
   } catch (error) {
