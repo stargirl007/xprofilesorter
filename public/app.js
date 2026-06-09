@@ -142,8 +142,8 @@ function renderTweets() {
 }
 
 function renderAnalyzeResult(data, shouldScroll = false) {
-  // Sort by viewCount descending — highest views first
-  currentTweets = (data.tweets || []).slice().sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+  // Sort by date descending — newest first
+  currentTweets = (data.tweets || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   currentSummary = data.summary || [];
 
   // Profile picture in header
