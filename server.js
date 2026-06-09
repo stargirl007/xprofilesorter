@@ -1105,7 +1105,7 @@ export async function handleSync(req, res) {
     const portfolioCategoryMap = {
       ai_vibecode: "AI",
       monad: "Monad",
-      crypto: "DeFi",
+      crypto: "Crypto",
       nft_gamefi: "NFT",
       video: "Video"
     };
