@@ -46,7 +46,7 @@ const categoryRules = [
     requiresMedia: true,
     keywords: ["video creation", "recorded", "created video", "video prod", "filming", "shot this", "made this video", "produced", "dropped video", "talking head", "on camera", "explainer video", "tutorial video", "walkthrough video", "long form", "short-form", "clip", "b-roll", "voiceover", "voice over"],
     // These phrases strongly imply the creator made a video.
-    strongVideoKeywords: ["made a vid", "made a video", "quick vid", "new vid", "dropped a vid", "vid on", "vid about", "vid is out", "vid out", "my vid", "our vid", "video is out", "video out", "new video", "video on", "video about", "walkthrough video", "walkthrough vid", "tutorial video", "tutorial vid", "explainer", "creator missions", "i made a quick", "posted a vid", "posted a video", "watch my", "link to my vid", "check my vid", "check out my vid", "how i ", "how to ", "guide on ", "guide to ", "roadmap", "walkthrough", "tutorial", "quick guide", "step by step", "step-by-step", "watch this", "watch the video", "here's a video", "here's the video", "see what i", "check what i", "subscribe for", "more videos", "full video", "full vid", "quick recap", "quick breakdown", "quick explainer", "vlog", "vlogging", "long form", "short-form", "clip", "b-roll", "voiceover", "voice over", "talking head"],
+    strongVideoKeywords: ["made a vid", "made a video", "quick vid", "new vid", "dropped a vid", "vid on", "vid about", "vid is out", "vid out", "my vid", "our vid", "video is out", "video out", "new video", "video on", "video about", "walkthrough video", "walkthrough vid", "tutorial video", "tutorial vid", "explainer", "creator missions", "i made a quick", "posted a vid", "posted a video", "watch my", "link to my vid", "check my vid", "check out my vid", "how i ", "how to ", "guide on ", "guide to ", "roadmap", "walkthrough", "tutorial", "quick guide", "step by step", "step-by-step", "watch this", "watch the video", "here's a video", "here's the video", "see what i", "check what i", "subscribe for", "more videos", "full video", "full vid", "quick recap", "quick breakdown", "quick explainer", "vlog", "vlogging", "talking head"],
     exclude: ["retweet", "clip from", "from tiktok", "from youtube", "from twitter", "credit to", "gif", "animated gif", "screen recording", "screen record", "recording screen", "gameplay", "screencast", "screen capture", "ui demo", "ai-generated", "ai generated", "generated video", "ai video", ...internetClipKeywords],
   },
   {
@@ -833,7 +833,7 @@ async function classifyTweets({ tweets, enabledCategoryIds, supabaseTweets = [],
         !tweet.hasGif &&
         Number(ai.confidence || 0) >= 0.72 &&
         matchedKeywords(text, internetClipKeywords).length === 0 &&
-        (allowedVideoEvidence.has(ai.videoEvidence) || hasStrongVideo);
+        (allowedVideoEvidence.has(ai.videoEvidence) || (hasStrongVideo && !["screen_recording", "ai_generated_video", "gif_or_image", "not_video"].includes(ai.videoEvidence)));
 
       let targetCatId = ai.category;
       if (isCreatorVideo && enabledCategoryIds.includes("video")) {
