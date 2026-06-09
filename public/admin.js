@@ -35,18 +35,22 @@ async function verifyPassword(password) {
       },
       body: JSON.stringify({ profile: "" })
     });
-    // If password is wrong it returns 401. If it returns 400 (missing profile), the password is correct!
-    return response.status !== 401;
+    // The server returns 400 (missing profile) if the password is correct but profile is empty.
+    if (response.status === 400 || response.status === 200) {
+      return { isValid: true, error: "" };
+    }
+    const data = await response.json().catch(() => ({}));
+    return { isValid: false, error: data.error || "Invalid admin password." };
   } catch {
-    return false;
+    return { isValid: false, error: "Network error. Please try again." };
   }
 }
 
 async function initAuth() {
   const savedPassword = localStorage.getItem(authKey);
   if (savedPassword) {
-    const isValid = await verifyPassword(savedPassword);
-    if (isValid) {
+    const res = await verifyPassword(savedPassword);
+    if (res.isValid) {
       overlay.classList.add("hidden");
       mainShell.classList.remove("hidden");
       // Restore last result if any
@@ -74,13 +78,14 @@ loginForm.addEventListener("submit", async (e) => {
   submitBtn.disabled = true;
   submitBtn.textContent = "Checking...";
 
-  const isValid = await verifyPassword(password);
-  if (isValid) {
+  const res = await verifyPassword(password);
+  if (res.isValid) {
     localStorage.setItem(authKey, password);
     overlay.classList.add("hidden");
     mainShell.classList.remove("hidden");
     passwordInput.value = "";
   } else {
+    loginError.textContent = res.error;
     loginError.classList.remove("hidden");
     passwordInput.value = "";
     passwordInput.focus();
