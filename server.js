@@ -1059,7 +1059,8 @@ export async function handleSync(req, res) {
       };
     });
 
-    const response = await fetch(`${supabaseUrl}/rest/v1/tweets_raw`, {
+    // 1. Sync to tweets_raw (rich metadata cache)
+    const responseRaw = await fetch(`${supabaseUrl}/rest/v1/tweets_raw`, {
       method: "POST",
       headers: {
         "apikey": supabaseKey,
@@ -1070,9 +1071,52 @@ export async function handleSync(req, res) {
       body: JSON.stringify(supabaseTweets)
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Supabase returned ${response.status}: ${errorText}`);
+    if (!responseRaw.ok) {
+      const errorText = await responseRaw.text();
+      throw new Error(`Supabase raw sync returned ${responseRaw.status}: ${errorText}`);
+    }
+
+    // 2. Sync to tweets (curated portfolio list)
+    const portfolioCategoryMap = {
+      ai_vibecode: "AI",
+      monad: "Monad",
+      crypto: "DeFi",
+      nft_gamefi: "NFT",
+      video: "Video"
+    };
+
+    const portfolioTweets = tweets.map(t => {
+      const origCat = t.categories[0]?.id || null;
+      let topic = portfolioCategoryMap[origCat] || "AI";
+      if (origCat === "ai_vibecode") {
+        const textLower = t.text.toLowerCase();
+        const vibecodeKeywords = ["vibecode", "vibecoded", "vibecoder", "vibecoding", "vibecode'd", "vibe code", "vibe coding", "vibe coded", "vibe coder", "squadcoding", "squad coding"];
+        const hasVibecode = matchedKeywords(textLower, vibecodeKeywords).length > 0;
+        if (hasVibecode) {
+          topic = "Vibecode";
+        }
+      }
+      return {
+        tweet_id: t.id,
+        tweet_url: t.url,
+        topic: topic
+      };
+    });
+
+    const responsePortfolio = await fetch(`${supabaseUrl}/rest/v1/tweets`, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+      },
+      body: JSON.stringify(portfolioTweets)
+    });
+
+    if (!responsePortfolio.ok) {
+      const errorText = await responsePortfolio.text();
+      throw new Error(`Supabase portfolio sync returned ${responsePortfolio.status}: ${errorText}`);
     }
 
     sendJson(res, 200, { success: true, count: supabaseTweets.length });
