@@ -16,7 +16,7 @@ const cacheDir = path.join(__dirname, ".cache");
 const rawCacheDir = path.join(cacheDir, "tweets");
 const classificationCacheDir = path.join(cacheDir, "classifications");
 
-const globalExcludeKeywords = ["my pfp", "pfp", "my avatar", "check out", "gm", "gmgm", "gm gm", "good morning", "selfie", "selfie pic", "me irl", "my pic", "my photo", "profile pic", "just woke up", "at gym", "gym", "outfit", "meme", "jk", "vibes only"];
+const globalExcludeKeywords = ["my pfp", "pfp", "my avatar", "check out", "gm", "gmgm", "gm gm", "good morning", "selfie", "selfie pic", "me irl", "my pic", "my photo", "profile pic", "just woke up", "at gym", "gym", "outfit", "jk", "vibes only"];
 const aiVideoKeywords = ["ai video", "ai-generated video", "ai generated video", "generated video", "generated with ai", "suno", "runway", "pika", "kling", "luma", "hailuo", "veo", "sora"];
 const screenRecordingKeywords = ["screen recording", "screen record", "recording screen", "screencast", "screen capture", "ui demo", "browser demo", "demo screen", "walkthrough screen"];
 const internetClipKeywords = ["short clip", "movie clip", "film clip", "anime clip", "series clip", "tv show clip", "cinema clip", "scene from", "from a movie", "from movie", "from a film", "from film", "movie scene", "film scene", "anime scene", "netflix", "marvel", "disney", "compilation", "fan edit"];
@@ -61,8 +61,8 @@ const categoryRules = [
     id: "monad",
     label: "Monad",
     color: "#5b21b6",
-    keywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz"],
-    strongKeywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz"],
+    keywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz", "monadhub", "monad-hub"],
+    strongKeywords: ["monad", "$mon", "gmonad", "gmonads", "@monad_xyz", "monadhub", "monad-hub"],
   },
   {
     id: "nft_gamefi",
@@ -88,7 +88,7 @@ const categoryRules = [
       "yield", "yields", "yield farming",
       // Trading & perps
       "trade", "trades", "trading", "trader", "perp", "perps", "perpetual", "perpetuals",
-      "swap", "swapping", "long", "short", "longing", "shorting", "leverage", "leveraged",
+      "swap", "swapping", "longing", "shorting", "long position", "short position", "perp long", "perp short", "leverage", "leveraged",
       "margin", "futures", "options", "spot", "pnl", "p&l", "profit", "loss",
       "portfolio", "position", "positions", "entry", "exit", "take profit", "stop loss",
       "funding rate", "funding", "open interest", "liquidation", "liquidated", "rekt",
