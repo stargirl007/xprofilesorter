@@ -23,6 +23,7 @@ const authKey = "x-sort:admin-password";
 
 let currentTweets = [];
 let currentSummary = [];
+let currentUsername = "";
 
 // ── Auth Logic ────────────────────────────────────────────────
 async function verifyPassword(password) {
@@ -233,6 +234,7 @@ function renderAnalyzeResult(data, shouldScroll = false) {
   // Sort by date descending — newest first
   currentTweets = (data.tweets || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   currentSummary = data.summary || [];
+  currentUsername = data.username || "";
 
   const pfp = document.getElementById("profile-avatar");
   if (pfp) {
@@ -365,18 +367,51 @@ tweetsEl.addEventListener("click", (event) => {
 // ── Export CSV ─────────────────────────────────────────────────
 
 exportButton.addEventListener("click", () => {
-  const rows = [["date", "primary_category", "categories", "likes", "reposts", "replies", "views", "url", "text"]];
+  const headers = [
+    "id",
+    "created_at",
+    "username",
+    "url",
+    "text",
+    "like_count",
+    "retweet_count",
+    "reply_count",
+    "view_count",
+    "primary_category",
+    "categories",
+    "engagement",
+    "avatar_url",
+    "media_url"
+  ];
+
+  const categoryMap = {
+    ai_vibecode: "AI",
+    monad: "MONAD",
+    crypto: "DEFI",
+    nft_gamefi: "NFT",
+    video: "VIDEO"
+  };
+
+  const rows = [headers];
   for (const tweet of currentTweets) {
+    const origCat = tweet.categories[0]?.id || null;
+    const primaryCategory = categoryMap[origCat] || origCat;
+
     rows.push([
+      tweet.id,
       tweet.createdAt,
-      tweet.primaryCategory,
-      tweet.categories.map((cat) => cat.label).join("; "),
+      (currentUsername || "").toLowerCase(),
+      tweet.url,
+      tweet.text,
       tweet.likeCount,
       tweet.retweetCount,
       tweet.replyCount,
       tweet.viewCount,
-      tweet.url,
-      tweet.text,
+      primaryCategory,
+      JSON.stringify(tweet.categories),
+      tweet.engagement,
+      tweet.avatarUrl,
+      tweet.mediaUrl
     ]);
   }
   const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
