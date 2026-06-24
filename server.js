@@ -1122,7 +1122,7 @@ export async function handleSync(req, res) {
       };
     });
 
-    const responsePortfolio = await fetch(`${supabaseUrl}/rest/v1/tweets`, {
+    const responsePortfolio = await fetch(`${supabaseUrl}/rest/v1/tweets?on_conflict=tweet_id`, {
       method: "POST",
       headers: {
         "apikey": supabaseKey,
