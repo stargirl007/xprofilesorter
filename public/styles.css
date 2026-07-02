@@ -1172,8 +1172,8 @@ select:focus {
 
 .tweet-thumb {
   display: block;
-  width: 42px;
-  height: 42px;
+  width: 68px;
+  height: 68px;
   object-fit: cover;
 }
 

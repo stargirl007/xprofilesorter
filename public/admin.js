@@ -191,8 +191,10 @@ function renderTweets() {
         .join(", ");
 
       const text = String(tweet.text || "");
-      const isLong = text.length > 260;
-      const shortText = isLong ? `${text.slice(0, 260).trim()}…` : text;
+      const hasMedia = !!tweet.mediaUrl;
+      const truncateLen = hasMedia ? 130 : 260;
+      const isLong = text.length > truncateLen;
+      const shortText = isLong ? `${text.slice(0, truncateLen).trim()}…` : text;
 
       const date = new Date(tweet.createdAt).toLocaleDateString("en-GB", {
         day: "numeric",
