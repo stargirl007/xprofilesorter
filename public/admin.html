@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>X Profile Sorter — Admin Control Panel</title>
+    <title>XSorter — Admin Control Panel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" />
@@ -12,122 +12,175 @@
     <script defer src="/_vercel/insights/script.js"></script>
   </head>
   <body>
-    <!-- Login Overlay -->
+    <!-- Login Dialog Box Overlay -->
     <div id="admin-overlay" class="admin-overlay">
-      <div class="admin-card">
-        <h2>XS Control Panel</h2>
-        <p>Enter the admin password to access syncing tools.</p>
-        <form id="admin-login-form">
-          <input type="password" id="admin-password" placeholder="Password..." required autocomplete="current-password" />
-          <button type="submit">Unlock Console</button>
-        </form>
-        <p id="login-error" class="error-msg hidden">Incorrect password.</p>
+      <div class="retro-window admin-card">
+        <div class="window-titlebar">
+          <div class="window-dots">
+            <span class="window-dot window-dot--red"></span>
+            <span class="window-dot window-dot--yellow"></span>
+            <span class="window-dot window-dot--green"></span>
+          </div>
+          <span class="window-title">security_alert.exe</span>
+        </div>
+        <div class="window-body">
+          <span class="exe-badge" style="background: #fee2e2; border-color: #ef4444; color: #ef4444;">ADMIN_LOCK.EXE</span>
+          <h2>XS Control Panel</h2>
+          <p>Enter the admin password to access classifications synchronization tools.</p>
+          <form id="admin-login-form">
+            <input type="password" id="admin-password" placeholder="Password..." required autocomplete="current-password" />
+            <button type="submit">Unlock Console</button>
+          </form>
+          <p id="login-error" class="error-msg hidden">Incorrect password.</p>
+        </div>
       </div>
     </div>
 
     <!-- Main Content (Hidden by default until authenticated) -->
     <main class="app-shell admin-shell hidden">
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="brand-row">
-            <div class="brand-left">
-              <span class="brand-mark" style="background: var(--ink); color: #ffffff;">AD</span>
-              <span>X Sorter Admin</span>
-            </div>
-            <button id="admin-logout" class="creator-badge" style="cursor: pointer; padding: 4px 12px; background: transparent; border: 1.5px solid var(--line-strong);">
-              <span>Logout</span>
-            </button>
-          </div>
-          <h1>Sync <em>your</em> sorted profile to Supabase.</h1>
-          <p class="subcopy">Analyze @ice_bearcute and synchronize classifications straight to your portfolio database.</p>
-          <div class="category-rail" aria-label="Available categories">
-            <span>🎬 video creation</span>
-            <span>🤖 AI &amp; vibecode</span>
-            <span>🟣 Monad</span>
-            <span>🎮 NFT &amp; GameFi</span>
-            <span>💎 crypto</span>
-          </div>
-        </div>
+      <!-- Retro Header / Navbar -->
+      <header class="app-header">
+        <a href="/" class="brand-left">
+          <svg class="folder-icon" width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="8" width="28" height="19" rx="3" fill="#fca5a5" stroke="#2b1d0c" stroke-width="2"/>
+            <path d="M2 11V5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3H2z" fill="#fca5a5" stroke="#2b1d0c" stroke-width="2"/>
+          </svg>
+          <span class="brand-title">XSorter <span style="font-size: 11px; font-weight: 700; color: var(--muted); border: 1.5px solid var(--muted); border-radius: 4px; padding: 1px 4px; margin-left: 6px; font-family: 'JetBrains Mono', monospace;">ADMIN</span></span>
+        </a>
+        <nav class="header-nav">
+          <a href="/">Dashboard</a>
+          <button id="admin-logout" class="creator-badge" style="cursor: pointer; padding: 6px 14px;">
+            <span>Logout</span>
+          </button>
+        </nav>
+      </header>
 
-        <form id="analyze-form" class="control-panel">
-          <div class="panel-top">
-            <div>
-              <p class="panel-kicker">Admin dashboard</p>
-              <h2>Sync profile</h2>
+      <!-- Teal Banner with Dual Window Cards -->
+      <section class="hero-teal-section">
+        <div class="hero-orange-grid">
+          
+          <!-- Left Window Card (Admin Welcome) -->
+          <div class="retro-window">
+            <div class="window-titlebar">
+              <div class="window-dots">
+                <span class="window-dot window-dot--red"></span>
+                <span class="window-dot window-dot--yellow"></span>
+                <span class="window-dot window-dot--green"></span>
+              </div>
+              <span class="window-title">Welcome — Admin Console</span>
             </div>
-          </div>
-          <label>
-            <span>X handle</span>
-            <div class="terminal-field">
-              <input id="profile" name="profile" value="ice_bearcute" autocomplete="off" required />
-            </div>
-          </label>
-          <fieldset class="range-field">
-            <legend>Range</legend>
-            <div class="range-options">
-              <label class="range-option">
-                <input type="radio" name="range" value="1" checked />
-                <span>1 month</span>
-              </label>
-              <label class="range-option">
-                <input type="radio" name="range" value="2" />
-                <span>2 months</span>
-              </label>
-              <label class="range-option">
-                <input type="radio" name="range" value="3" />
-                <span>3 months</span>
-              </label>
-              <label class="range-option">
-                <input type="radio" name="range" value="4" />
-                <span>4 months</span>
-              </label>
-            </div>
-          </fieldset>
-          <fieldset class="category-field">
-            <div class="field-head">
-              <div class="legend-stack"><legend>Categories</legend><span id="selected-count">5 selected</span></div>
-              <div class="field-actions">
-                <button type="button" data-category-action="all">All</button>
-                <button type="button" data-category-action="clear">None</button>
+            <div class="window-body">
+              <span class="exe-badge" style="background: #ede9fe; border-color: #7c3aed; color: #7c3aed;">PORTFOLIO_SYNC.EXE</span>
+              <h1>Sync <em>your</em> sorted profile directly to Supabase</h1>
+              <p class="subcopy">This admin workspace lets you scan the handle @ice_bearcute, process classifications locally or with OpenAI, and directly synchronize results to your portfolio showcase site.</p>
+              <div class="hero-metrics">
+                <span>✦ Supabase Link</span>
+                <span>✦ Force Refresh</span>
+                <span>✦ Pinned Sync</span>
+                <span>✦ Override active</span>
               </div>
             </div>
-            <div class="category-options">
-              <label class="category-option">
-                <input type="checkbox" name="categories" value="video" checked />
-                <span>🎬 video creation</span>
-              </label>
-              <label class="category-option">
-                <input type="checkbox" name="categories" value="ai_vibecode" checked />
-                <span>🤖 AI &amp; vibecode</span>
-              </label>
-              <label class="category-option">
-                <input type="checkbox" name="categories" value="monad" checked />
-                <span>🟣 Monad</span>
-              </label>
-              <label class="category-option">
-                <input type="checkbox" name="categories" value="nft_gamefi" checked />
-                <span>🎮 NFT &amp; GameFi</span>
-              </label>
-              <label class="category-option">
-                <input type="checkbox" name="categories" value="crypto" checked />
-                <span>💎 crypto</span>
-              </label>
+          </div>
+
+          <!-- Right Window Card (Sync Form) -->
+          <div class="retro-window">
+            <div class="window-titlebar">
+              <div class="window-dots">
+                <span class="window-dot window-dot--red"></span>
+                <span class="window-dot window-dot--yellow"></span>
+                <span class="window-dot window-dot--green"></span>
+              </div>
+              <span class="window-title">Quick sync — db_uploader.exe</span>
             </div>
-          </fieldset>
-          <label class="refresh-option">
-            <input type="checkbox" id="quick-scan" name="quickScan" checked />
-            <span>⚡ Quick Scan <small>(~80 posts)</small></span>
-          </label>
-          <label class="refresh-option">
-            <input type="checkbox" id="refresh" name="refresh" />
-            <span>Force Refresh (bypass cache)</span>
-          </label>
-          <button type="submit" id="submit-btn">Analyze handle →</button>
-        </form>
+            <div class="window-body">
+              <form id="analyze-form" class="control-panel">
+                <div class="panel-top">
+                  <div>
+                    <p class="panel-kicker">Admin dashboard</p>
+                    <h2>Sync profile</h2>
+                  </div>
+                </div>
+                <label>
+                  <span>X handle</span>
+                  <div class="terminal-field">
+                    <input id="profile" name="profile" value="ice_bearcute" autocomplete="off" required />
+                  </div>
+                </label>
+                <fieldset class="range-field">
+                  <legend>Range</legend>
+                  <div class="range-options">
+                    <label class="range-option">
+                      <input type="radio" name="range" value="1" checked />
+                      <span>1 month</span>
+                    </label>
+                    <label class="range-option">
+                      <input type="radio" name="range" value="2" />
+                      <span>2 months</span>
+                    </label>
+                    <label class="range-option">
+                      <input type="radio" name="range" value="3" />
+                      <span>3 months</span>
+                    </label>
+                    <label class="range-option">
+                      <input type="radio" name="range" value="4" />
+                      <span>4 months</span>
+                    </label>
+                  </div>
+                </fieldset>
+                <fieldset class="category-field">
+                  <div class="field-head">
+                    <div class="legend-stack">
+                      <legend>Categories</legend>
+                      <span id="selected-count">5 selected</span>
+                    </div>
+                    <div class="field-actions">
+                      <button type="button" data-category-action="all">All</button>
+                      <button type="button" data-category-action="clear">None</button>
+                    </div>
+                  </div>
+                  <div class="category-options">
+                    <label class="category-option">
+                      <input type="checkbox" name="categories" value="video" checked />
+                      <span>video creation</span>
+                    </label>
+                    <label class="category-option">
+                      <input type="checkbox" name="categories" value="ai_vibecode" checked />
+                      <span>AI &amp; vibecode</span>
+                    </label>
+                    <label class="category-option">
+                      <input type="checkbox" name="categories" value="monad" checked />
+                      <span>Monad</span>
+                    </label>
+                    <label class="category-option">
+                      <input type="checkbox" name="categories" value="nft_gamefi" checked />
+                      <span>NFT &amp; GameFi</span>
+                    </label>
+                    <label class="category-option">
+                      <input type="checkbox" name="categories" value="crypto" checked />
+                      <span>crypto</span>
+                    </label>
+                  </div>
+                </fieldset>
+                <label class="refresh-option">
+                  <input type="checkbox" id="quick-scan" name="quickScan" checked />
+                  <span>⚡ Quick Scan <small>(~80 posts)</small></span>
+                </label>
+                <label class="refresh-option">
+                  <input type="checkbox" id="refresh" name="refresh" />
+                  <span>🔄 Force Refresh (bypass cache)</span>
+                </label>
+                <button type="submit" id="submit-btn">Analyze handle →</button>
+              </form>
+            </div>
+          </div>
+
+        </div>
       </section>
 
+      <!-- Status Indicator -->
       <section id="status" class="status hidden"></section>
 
+      <!-- Results Terminal Section -->
       <section id="results" class="results hidden">
         <div class="term-window" data-theme="dark">
           <div class="term-titlebar">
@@ -138,8 +191,8 @@
             </div>
             <span class="term-title" id="term-title">x-profile-sorter — admin console</span>
             <button id="theme-toggle" class="term-theme-toggle" type="button" aria-label="Toggle Theme">
-              <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-              <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
             </button>
           </div>
           <div class="term-body">
